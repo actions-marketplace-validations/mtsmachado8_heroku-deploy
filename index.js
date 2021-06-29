@@ -1,5 +1,28 @@
 const core = require('@actions/core');
 const { promisify } = require('util');
+const spawn = require('child_process').spawn;
+
+async function build (buildCommand) {
+  return new Promise((resolve, reject) => {
+    console.log('Building 🛠')
+    const dockerDeamon = spawn('docker', buildCommand.split(' '))
+
+    dockerDeamon.stdout.on('data', data => {
+      console.log(data)
+    })
+
+    dockerDeamon.stderr.on('data', data => {
+      console.log(data)
+      return reject(data)
+    })
+
+    dockerDeamon.on('close', code => {
+      console.log(`Docker Shell existed with status = ${code}`)
+      return resolve(code)
+    })
+  })
+}
+
 
 const exec = promisify(require('child_process').exec);
 
@@ -23,8 +46,11 @@ async function buildPushAndDeploy() {
   
   try {
     const buildCommand = `docker build . ${buildOptions} --tag registry.heroku.com/${appName}/web`
+    const buildCommand2 = `build . ${buildOptions} --tag registry.heroku.com/${appName}/web`
     console.log(`Changing directory to ${dockerFilePath} and building 🛠`);
-    let { stdout, stderr } = await exec(`cd ${dockerFilePath} && ls && ${buildCommand}`);
+    let { stdout, stderr } = await exec(`cd ${dockerFilePath} && ls`);
+    await build(buildCommand2)
+    
     console.log('Image built 🛠🚀');
     console.log(`Output ${stdout}`);
     console.log(`Errors? ${stderr}`);
