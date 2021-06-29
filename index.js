@@ -8,16 +8,15 @@ async function build (buildCommand) {
     const dockerDeamon = spawn('docker', buildCommand.split(' '))
 
     dockerDeamon.stdout.on('data', data => {
-      console.log(data)
+      console.log(data.toString('ascii'))
     })
 
     dockerDeamon.stderr.on('data', data => {
-      console.log(data)
-      return reject(data)
+      console.log(data.toString('ascii'))
     })
 
     dockerDeamon.on('close', code => {
-      console.log(`Docker Shell existed with status = ${code}`)
+      console.log(`Docker Shell exited with status = ${code}`)
       return resolve(code)
     })
   })
